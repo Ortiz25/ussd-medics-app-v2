@@ -526,7 +526,7 @@ app.post("/ussd", async function (req, res) {
 });
 
 // Start the server
-const PORT = 2000;
+const PORT = 5000;
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
