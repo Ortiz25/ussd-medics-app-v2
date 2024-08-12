@@ -312,6 +312,10 @@ app.post("/ussd", async function (req, res) {
 
   menu.state("physical", {
     run: async () => {
+      if (menu.val.length > 3) {
+        let location = menu.val.toLowerCase();
+        await menu.session.set("location", capitalize(location));
+      }
       await menu.session.set("appointmentType", "physical");
 
       const specialistType = await getDoctorType();
@@ -335,6 +339,10 @@ app.post("/ussd", async function (req, res) {
 
   menu.state("remote", {
     run: async () => {
+      if (menu.val.length > 3) {
+        let location = menu.val.toLowerCase();
+        await menu.session.set("location", capitalize(location));
+      }
       await menu.session.set("appointmentType", "remote");
 
       const specialistType = await getDoctorType();
@@ -359,36 +367,61 @@ app.post("/ussd", async function (req, res) {
   menu.state("registration.specialist", {
     run: async () => {
       let docIndex = menu.val;
+      // console.log("Index", docIndex);
       const location = await menu.session.get("location");
-      //console.log("Index", docIndex);
       const doctors = await getDoctors();
       const specialistType = await getDoctorType();
-      //console.log(doctors, specialistType);
+      // console.log(doctors, specialistType);
       doctors.forEach((doctor, idx) => {
         doctorsArray.push({ index: `${idx + 1}`, name: doctor.name });
       });
       let unique = [...new Set(specialistType)];
       specialist = unique.at(docIndex - 1);
-      console.log(specialist, unique);
+
       if (specialist) {
         const docNames = await getDoctorsNames(specialist, location);
         await menu.session.set("docNamesArray", docNames);
         //console.log("Docnames", docNames);
-        doctorNumber = `*[1-${docNames?.length}]`;
-        await menu.session.set("specialist", specialist?.name);
+        doctorNumber = `*[1-${docNames ? docNames.length : "2"}]`;
+        await menu.session.set("specialist-name", specialist?.name);
 
-        if (string2.length === 0) {
+        if (docNames != 0) {
           docNames.forEach((specialist, index) => {
             string2 += `
           ${index + 1}. ${specialist}
          `;
           });
+        } else {
+          return menu.con(
+            `There is currently no registered ${specialist} in ${location}:
+             0. Change Location,
+             100. Exit`
+          );
         }
       }
       menu.con(string1.concat(" ", string2));
     },
     next: {
       [doctorNumber]: "appointment.doctor",
+      0: "new-location1",
+      100: "Exit",
+    },
+  });
+  menu.state("new-location1", {
+    run: async () => {
+      const appointmentType = await menu.session.get("appointmentType");
+
+      menu.con("Enter New Location/Town (e.g Nairobi):");
+    },
+    next: {
+      "*[a-zA-Z]+": async () => {
+        const appointmentType = await menu.session.get("appointmentType");
+        if (appointmentType === "remote") {
+          return "remote";
+        } else {
+          return "physical";
+        }
+      },
     },
   });
 
