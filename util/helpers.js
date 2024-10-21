@@ -9,6 +9,8 @@ import {
 } from "../db/db.js";
 import Africastalking from "africastalking";
 import { Op } from "sequelize";
+import translate from "translate";
+translate.engine = "google";
 
 // Africa is talking
 const credentials = {
@@ -17,6 +19,12 @@ const credentials = {
 };
 
 const sms = Africastalking(credentials).SMS;
+
+export async function wordTranslate(word) {
+  const text = await translate(word, "sw");
+
+  return text;
+}
 
 // get Doctor types
 export async function getDoctorType() {
@@ -73,13 +81,18 @@ export async function getDoctorDetails(name) {
   try {
     const doctorsArray = [];
     const doctor = await Doctor.findOne({
-      attributes: ["name", "contact_info", "location"],
+      attributes: ["name", "contact_info", "location", "email", "address"],
       where: { name: name },
     });
     // doctors.forEach((doctor) => {
     //   doctorsArray.push({ doctor_id: doctor.doctor_id, name: doctor.name });
     // });
-    return { contact: doctor.contact_info, location: doctor.location };
+    return {
+      contact: doctor.contact_info,
+      location: doctor.location,
+      email: doctor.email,
+      address: doctor.address,
+    };
   } catch (error) {
     console.log(error);
   }

@@ -48,6 +48,8 @@ export const Doctor = sequelize.define(
     },
     type: DataTypes.STRING,
     location: DataTypes.STRING,
+    email: DataTypes.STRING,
+    address: DataTypes.STRING,
   },
   {
     timestamps: false,

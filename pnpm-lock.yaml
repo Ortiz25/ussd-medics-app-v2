@@ -32,6 +32,9 @@ dependencies:
   sqlite3:
     specifier: ^5.1.7
     version: 5.1.7
+  translate:
+    specifier: ^3.0.0
+    version: 3.0.0
   unirest:
     specifier: ^0.6.0
     version: 0.6.0
@@ -1959,6 +1962,10 @@ packages:
     dependencies:
       psl: 1.9.0
       punycode: 2.3.1
+    dev: false
+
+  /translate@3.0.0:
+    resolution: {integrity: sha512-cGKtG5QuV6ZR3IP9FMlqWMGtYz1f7vMqgPsh441PbvHa11WaN8urLI4Up/UtvIsu2tg3h3f5kHUFJDWKHa4S6w==}
     dev: false
 
   /tunnel-agent@0.6.0:

@@ -1,6 +1,6 @@
 import * as dotenv from "dotenv";
 dotenv.config();
-import express, { response } from "express";
+import express from "express";
 import bodyParser from "body-parser";
 import UssdMenu from "ussd-builder";
 import {
@@ -12,6 +12,7 @@ import {
   getGoogleAppointments,
   convertTo24Hour,
   checkUserExist,
+  wordTranslate,
 } from "./util/helpers.js";
 import { getOAuthToken } from "./mpesa/mpesa.js";
 
@@ -25,6 +26,7 @@ let sessions = {};
 let specialist;
 let specialistNumber;
 let doctorNumber;
+let language;
 
 menu.sessionConfig({
   start: (sessionId, callback) => {
@@ -83,21 +85,31 @@ app.post("/ussd", async function (req, res) {
   menu.startState({
     run: () => {
       menu.con(
-        `Welcome to Medics USSD App:
-          1.  start:
-          0.  Exit:`
+        `Welcome/ Karibu:
+          1. English:
+          2. Kiswahili:
+          0. Exit / Ondoka`
       );
     },
 
     next: {
       0: "Exit",
       1: "Start",
+      2: "Start",
     },
   });
 
   menu.state("Start", {
-    run: () => {
-      menu.con("Enter your Name:");
+    run: async () => {
+      let lang = +menu.val;
+      if (lang === 1) {
+        menu.session.set("lang", "English");
+      }
+      if (lang === 2) {
+        menu.session.set("lang", "Kiswahili");
+      }
+      console.log(typeof lang);
+      menu.con(`${lang == 1 ? " Enter your Name:" : "Weka Jina Lako:"}`);
     },
     next: {
       "*[a-zA-Z]+": "registration.name",
@@ -105,10 +117,14 @@ app.post("/ussd", async function (req, res) {
   });
 
   menu.state("registration.name", {
-    run: function () {
+    run: async () => {
       let name = menu.val;
+      const language = await menu.session.get("lang");
+      console.log(language);
       menu.session.set("name", name).then(() => {
-        menu.con("Enter your Age:");
+        menu.con(
+          `${language === "English" ? "Enter your Age:" : "Weka Umri Wako:"}`
+        );
       });
     },
     next: {
@@ -117,10 +133,17 @@ app.post("/ussd", async function (req, res) {
   });
 
   menu.state("registration.age", {
-    run: function () {
+    run: async () => {
       let age = menu.val;
+      const language = await menu.session.get("lang");
       menu.session.set("age", age).then(() => {
-        menu.con("Enter your number (0722 XXX XXX):");
+        menu.con(
+          `${
+            language === "English"
+              ? "Enter your Phone number (0722 XXX XXX):"
+              : "Weka Nambari Yako ya Simu (0722 XXX XXX):"
+          }`
+        );
       });
     },
     next: {
@@ -129,10 +152,17 @@ app.post("/ussd", async function (req, res) {
   });
 
   menu.state("registration.number", {
-    run: () => {
+    run: async () => {
       let number = menu.val;
+      const language = await menu.session.get("lang");
       menu.session.set("number", number).then(() => {
-        menu.con("Enter your Location/Town (e.g Nairobi):");
+        menu.con(
+          `${
+            language === "English"
+              ? "Enter your Location/Town (e.g Nairobi):"
+              : "Weka Mahali Ulipo/Mji (mfano Nairobi):"
+          }`
+        );
       });
     },
     next: {
@@ -141,12 +171,21 @@ app.post("/ussd", async function (req, res) {
   });
 
   menu.state("registration.location", {
-    run: () => {
+    run: async () => {
       let location = menu.val.toLowerCase();
+      const language = await menu.session.get("lang");
       menu.session.set("location", capitalize(location)).then(() => {
-        menu.con(`Choose prefered Service:
+        menu.con(
+          `${
+            language === "English"
+              ? `Choose preferred Service:
                     1. Specialist Details.
-                    2. Book an Appointment.`);
+                    2. Book an Appointment.`
+              : `Chagua Huduma Unayopendelea:
+                    1. Maelezo ya Mtaalamu.
+                    2. Panga Miadi.`
+          }`
+        );
       });
     },
     next: {
@@ -160,19 +199,47 @@ app.post("/ussd", async function (req, res) {
   menu.state("Specialist", {
     run: async () => {
       const specialistType = await getDoctorType();
+      const language = await menu.session.get("lang");
       // if (location.length > 2) {
       //   menu.session.set("location", location);
       // }
       let unique = [...new Set(specialistType)];
-      let string1 = `Select specialist you need:`;
+      let string1 = `${
+        language === "English"
+          ? "Select specialist you need:"
+          : "Chagua mtaalamu unayehitaji:"
+      }`;
       let string2 = "";
-      unique.forEach((specialist, index) => {
-        string2 += `
-      ${index + 1}. ${specialist}
-     `;
-      });
-      specialistNumber = `*[1-${unique.length}]`;
+      //   unique.forEach((specialist, index) => {
+      //     string2 += `
+      //   ${index + 1}. ${
+      //       language === "English"
+      //         ? specialist
+      //         : await wordTranslate(specialist.split("-")[0])
+      //     }
+      //  `;
+      //   });
+      string2 = await Promise.all(
+        unique.map(async (specialist, index) => {
+          const translatedSpecialist =
+            language === "English"
+              ? specialist
+              : await wordTranslate(specialist.split("-")[0]);
 
+          return `${index + 1}. ${translatedSpecialist}\n`;
+        })
+      );
+      if (unique.length < 10) {
+        specialistNumber = `*[1-${unique.length}]`;
+      }
+      if (unique.length === 10) {
+        specialistNumber = "*^(10|[1-9])$";
+      }
+      if (unique.length > 10 && unique.length < 20) {
+        specialistNumber = `*^(1[0-${unique.lenght}]|[1-9])$`;
+      }
+
+      console.log(specialistNumber);
       menu.con(string1.concat(" ", string2));
     },
     next: {
@@ -182,26 +249,28 @@ app.post("/ussd", async function (req, res) {
   menu.state("registration.specialist-1", {
     run: async () => {
       let docIndex = menu.val;
-      // console.log("Index", docIndex);
+      //console.log("Index", docIndex);
       const doctors = await getDoctors();
       const specialistType = await getDoctorType();
       const location = await menu.session.get("location");
-      // console.log(doctors, specialistType);
+      //console.log(doctors, specialistType);
       doctors.forEach((doctor, idx) => {
         doctorsArray.push({ index: `${idx + 1}`, name: doctor.name });
       });
       let unique = [...new Set(specialistType)];
       specialist = unique.at(docIndex - 1);
+      //console.log(unique, specialist);
       await menu.session.set("specialist-type", specialist);
-      console.log("Selected specialist", specialist, location);
+      //console.log("Selected specialist", specialist, location);
       if (specialist) {
         const docNames = await getDoctorsNames(specialist, location);
+
         await menu.session.set("docNamesArray", docNames);
-        //console.log("Docnames", docNames);
+        //console.log("Docnames", docNames.length);
         doctorNumber = `*[1-${docNames ? docNames.length : "2"}]`;
         await menu.session.set("specialist-name", specialist?.name);
 
-        if (docNames != 0) {
+        if (docNames.length !== 0) {
           docNames.forEach((specialist, index) => {
             string2 += `
           ${index + 1}. ${specialist}
@@ -279,15 +348,15 @@ app.post("/ussd", async function (req, res) {
         // console.log("Array", docNamesArray);
         const doctor = docNamesArray.at(docIndex - 1);
         // console.log("Doctor", doctor);
-        //await menu.session.set("Doctor", doctor);
+        await menu.session.set("Doctor", doctor);
         const docDetails = await getDoctorDetails(doctor);
-        //console.log("Details", docDetails);
+        console.log("Details", docDetails);
         menu.end(
           `${doctor}:
             Mobile: ${docDetails.contact}
             Town: ${docDetails.location}
-            Email: doctor@gmail.com
-            Address: Doctors-Plaza,Muthithi-Rd, 2nd-Floor, Room-27`
+            Email: ${docDetails.email}
+            Address: ${docDetails.address}`
         );
       }
     },
@@ -333,7 +402,7 @@ app.post("/ussd", async function (req, res) {
       menu.con(string1.concat(" ", string2));
     },
     next: {
-      [specialistNumber]: "registration.specialist",
+      "*[1-10]": "registration.specialist",
     },
   });
 
@@ -510,14 +579,14 @@ app.post("/ussd", async function (req, res) {
 
       //console.log("Number", number);
       const userId = await checkUserExist(number);
-      //await insertUser(name, age, number, location);
+      await insertUser(name, age, number, location);
       const sms_message = `Appointment scheduled with ${specialist} on ${date} at ${time}.`;
       //await sendSms(phoneNumber, sms_message);
       //console.log("User ID", userId);
       if (appointmentType === "physical") {
-        //await recordAppointment(userId, doctorId, date, time);
+        await recordAppointment(userId, doctorId, date, time);
       } else {
-        //await recordTeleppointment(userId, doctorId, date, time);
+        await recordTeleppointment(userId, doctorId, date, time);
       }
       //console.log(specialist, doctorId, name, date, time);
       menu.end(`Your appointment has been scheduled.
