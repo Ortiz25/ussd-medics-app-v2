@@ -13,6 +13,8 @@ import {
   convertTo24Hour,
   checkUserExist,
   wordTranslate,
+  recordAppointment,
+  recordTeleppointment,
 } from "./util/helpers.js";
 import { getOAuthToken } from "./mpesa/mpesa.js";
 
@@ -521,23 +523,23 @@ app.post("/ussd", async function (req, res) {
     run: async () => {
       let date = menu.val;
       const specialist = await menu.session.get("Doctor");
-
+      console.log(date);
       const doctorId = await getDoctorId(specialist);
       const appointments = await getGoogleAppointments(date, doctorId);
       await menu.session.set("date", date);
-      const timesToRemove = appointments.map((appointment) =>
-        appointment.dataValues.start_time.slice(0, 5)
-      );
+      // const timesToRemove = appointments.map((appointment) =>
+      //   appointment.dataValues.start_time.slice(0, 5)
+      // );
 
-      // Filter out the times
-      const filteredTimeSlots = timeSlots.filter((slot) => {
-        const slot24h = convertTo24Hour(slot.trim()); // Convert to 24-hour format and trim whitespace
-        return !timesToRemove.includes(slot24h);
-      });
+      // // Filter out the times
+      // const filteredTimeSlots = timeSlots.filter((slot) => {
+      //   const slot24h = convertTo24Hour(slot.trim()); // Convert to 24-hour format and trim whitespace
+      //   return !timesToRemove.includes(slot24h);
+      // });
 
-      await menu.session.set("slots", filteredTimeSlots);
+      await menu.session.set("slots", timeSlots);
 
-      const timeSlotsString = filteredTimeSlots
+      const timeSlotsString = timeSlots
         .map((slot, index) => `${index + 1}. ${slot}`)
         .join("\n");
 
@@ -579,7 +581,7 @@ app.post("/ussd", async function (req, res) {
 
       //console.log("Number", number);
       const userId = await checkUserExist(number);
-      await insertUser(name, age, number, location);
+      //await insertUser(name, age, number, location);
       const sms_message = `Appointment scheduled with ${specialist} on ${date} at ${time}.`;
       //await sendSms(phoneNumber, sms_message);
       //console.log("User ID", userId);
