@@ -376,10 +376,18 @@ app.post("/ussd", async function (req, res) {
 
   menu.state("Appointment", {
     run: async () => {
+      const language = await menu.session.get("lang");
       menu.con(
-        `Please enter the Appointment type:
-         1. Physical appointment
-         2. Remote(Video appointment)`
+        ` ${
+            language === "English"
+              ? `Please enter the Appointment type:
+                       1. Physical appointment
+                       2. Remote(Video appointment`
+              : `Tafadhali ingiza aina ya miadi:
+                       1. Miadi ya ana kwa ana
+                       2. Miadi ya mbali (Miadi ya video).`
+          } 
+     )`
       );
     },
     next: {
