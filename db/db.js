@@ -8,15 +8,15 @@ const sequelize = new Sequelize(
   process.env.DB_USER,
   process.env.DB_PASS,
   {
-    host: process.env.MYSQLDB_HOST,
-    dialect: "mysql",
+    host: process.env.DB_HOST,
+    dialect: 'postgres',
     port: process.env.PORT,
   }
 );
 
 // Define models
-export const User = sequelize.define(
-  "User",
+export const user = sequelize.define(
+  "user",
   {
     user_id: {
       type: DataTypes.INTEGER,
@@ -33,8 +33,8 @@ export const User = sequelize.define(
   }
 );
 
-export const Doctor = sequelize.define(
-  "Doctor",
+export const doctor = sequelize.define(
+  "doctor",
   {
     doctor_id: {
       type: DataTypes.INTEGER,
@@ -56,8 +56,8 @@ export const Doctor = sequelize.define(
   }
 );
 
-export const Appointment = sequelize.define(
-  "Appointment",
+export const appointment = sequelize.define(
+  "appointment",
   {
     appointment_id: {
       type: DataTypes.INTEGER,
@@ -74,8 +74,8 @@ export const Appointment = sequelize.define(
     timestamps: false,
   }
 );
-export const Teleppointment = sequelize.define(
-  "Teleappointment",
+export const teleappointment = sequelize.define(
+  "teleappointment",
   {
     appointment_id: {
       type: DataTypes.INTEGER,
@@ -93,8 +93,8 @@ export const Teleppointment = sequelize.define(
   }
 );
 
-export const Googleappointment = sequelize.define(
-  "Googleappointment",
+export const googleappointment = sequelize.define(
+  "googleappointment",
   {
     appointment_id: {
       type: DataTypes.INTEGER,
@@ -114,9 +114,9 @@ export const Googleappointment = sequelize.define(
 );
 
 // Define associations
-Appointment.belongsTo(User, { foreignKey: "user_id", as: "User" });
-Appointment.belongsTo(Doctor, { foreignKey: "doctor_id", as: "Doctor" });
-Teleppointment.belongsTo(User, { foreignKey: "user_id", as: "User" });
-Teleppointment.belongsTo(Doctor, { foreignKey: "doctor_id", as: "Doctor" });
-User.hasMany(Appointment, { foreignKey: "user_id" });
-Doctor.hasMany(Appointment, { foreignKey: "doctor_id" });
+appointment.belongsTo(user, { foreignKey: "user_id", as: "User" });
+appointment.belongsTo(doctor, { foreignKey: "doctor_id", as: "Doctor" });
+teleappointment.belongsTo(user, { foreignKey: "user_id", as: "User" });
+teleappointment.belongsTo(doctor, { foreignKey: "doctor_id", as: "Doctor" });
+user.hasMany(appointment, { foreignKey: "user_id" });
+doctor.hasMany(appointment, { foreignKey: "doctor_id" });

@@ -1,11 +1,11 @@
 import * as dotenv from "dotenv";
 dotenv.config();
 import {
-  User,
-  Appointment,
-  Doctor,
-  Teleppointment,
-  Googleappointment,
+  user,
+  appointment,
+  doctor,
+  teleappointment,
+  googleappointment,
 } from "../db/db.js";
 import Africastalking from "africastalking";
 import { Op } from "sequelize";
@@ -26,13 +26,29 @@ export async function wordTranslate(word) {
   return text;
 }
 
+// insert user into DB
+export async function insertUser(name, age, phoneNumber, location) {
+  const newUser = {
+    name: name,
+    age: age,
+    phone_number: phoneNumber,
+    location: location,
+  };
+  try {
+    await user.create(newUser);
+  } catch (e) {
+    console.error("Error inserting data:", e);
+  }
+}
+
 // get Doctor types
 export async function getDoctorType() {
   try {
     const doctorsArray = [];
-    const doctors = await Doctor.findAll({
+    const doctors = await doctor.findAll({
       attributes: ["type"],
     });
+   
     doctors.forEach((doctor) => {
       doctorsArray.push(doctor.type);
     });
@@ -46,7 +62,7 @@ export async function getDoctorType() {
 export async function getDoctors() {
   try {
     const doctorsArray = [];
-    const doctors = await Doctor.findAll({
+    const doctors = await doctor.findAll({
       attributes: ["doctor_id", "name"],
     });
     doctors.forEach((doctor) => {
@@ -62,7 +78,7 @@ export async function getDoctors() {
 export async function getDoctorsNames(type, location) {
   try {
     const doctorsArray = [];
-    const doctors = await Doctor.findAll({
+    const doctors = await doctor.findAll({
       attributes: ["name"],
       where: { type: type, location: location },
     });
@@ -80,7 +96,7 @@ export async function getDoctorsNames(type, location) {
 export async function getDoctorDetails(name) {
   try {
     const doctorsArray = [];
-    const doctor = await Doctor.findOne({
+    const doc = await doctor.findOne({
       attributes: ["name", "contact_info", "location", "email", "address"],
       where: { name: name },
     });
@@ -88,10 +104,10 @@ export async function getDoctorDetails(name) {
     //   doctorsArray.push({ doctor_id: doctor.doctor_id, name: doctor.name });
     // });
     return {
-      contact: doctor.contact_info,
-      location: doctor.location,
-      email: doctor.email,
-      address: doctor.address,
+      contact: doc.contact_info,
+      location: doc.location,
+      email: doc.email,
+      address: doc.address,
     };
   } catch (error) {
     console.log(error);
@@ -101,11 +117,11 @@ export async function getDoctorDetails(name) {
 //get Doctor by ID
 export async function getDoctorId(name) {
   try {
-    const doctor = await Doctor.findOne({
+    const doc = await doctor.findOne({
       attributes: ["doctor_id"],
       where: { name: name },
     });
-    return doctor.doctor_id;
+    return doc.doctor_id;
   } catch (e) {
     console.error("Error getting user ID:", e);
   }
@@ -114,7 +130,7 @@ export async function getDoctorId(name) {
 // Record appointment in DB
 export async function recordAppointment(userId, doctorId, date, time) {
   try {
-    await Appointment.create({
+    await appointment.create({
       user_id: userId,
       doctor_id: doctorId,
       date: date,
@@ -128,7 +144,7 @@ export async function recordAppointment(userId, doctorId, date, time) {
 
 export async function recordTeleppointment(userId, doctorId, date, time) {
   try {
-    await Teleppointment.create({
+    await teleappointment.create({
       user_id: userId,
       doctor_id: doctorId,
       date: date,
@@ -173,7 +189,7 @@ export function convertTo24Hour(time12h) {
 
 export async function getGoogleAppointments(date, doctorId) {
   try {
-    const appointments = await Googleappointment.findAll({
+    const appointments = await googleappointment.findAll({
       where: {
         date: {
           [Op.eq]: date,
@@ -191,11 +207,11 @@ export async function getGoogleAppointments(date, doctorId) {
 //Get User By PhoneNumber
 export async function checkUserExist(phone_number) {
   try {
-    const user = await User.findOne({
+    const User = await user.findOne({
       attributes: ["user_id"],
       where: { phone_number: phone_number },
     });
-    return user.user_id;
+    return User.user_id;
   } catch (e) {
     console.error("Error getting user ID:", e);
   }

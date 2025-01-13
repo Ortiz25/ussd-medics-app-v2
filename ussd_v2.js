@@ -15,6 +15,7 @@ import {
   wordTranslate,
   recordAppointment,
   recordTeleppointment,
+  sendSms
 } from "./util/helpers.js";
 import { getOAuthToken } from "./mpesa/mpesa.js";
 
@@ -60,6 +61,11 @@ menu.sessionConfig({
 app.get("/", async function (req, res) {
   // const token = await getOAuthToken();
   // console.log(token);
+  client.messages
+  .create({
+      to: '[HandsetNumber]'
+  })
+  .then(message => console.log(message.sid));
   res.send("Hello World");
 });
 
@@ -186,7 +192,7 @@ app.post("/ussd", async function (req, res) {
               : `Chagua Huduma Unayopendelea:
                     1. Maelezo ya Mtaalamu.
                     2. Panga Miadi.`
-          }`
+          }`  
         );
       });
     },
@@ -201,36 +207,39 @@ app.post("/ussd", async function (req, res) {
   menu.state("Specialist", {
     run: async () => {
       const specialistType = await getDoctorType();
+      const cleanedSpecialistType = specialistType.map((item) => item.trim());
       const language = await menu.session.get("lang");
       // if (location.length > 2) {
       //   menu.session.set("location", location);
       // }
-      let unique = [...new Set(specialistType)];
+      let unique = [...new Set(cleanedSpecialistType)];
+       console.log(specialistType)
+       console.log(unique)
       let string1 = `${
         language === "English"
           ? "Select specialist you need:"
           : "Chagua mtaalamu unayehitaji:"
-      }`;
+      }\n`;
       let string2 = "";
-      //   unique.forEach((specialist, index) => {
-      //     string2 += `
-      //   ${index + 1}. ${
-      //       language === "English"
-      //         ? specialist
-      //         : await wordTranslate(specialist.split("-")[0])
-      //     }
-      //  `;
-      //   });
+      
+      
       string2 = await Promise.all(
+        
         unique.map(async (specialist, index) => {
           const translatedSpecialist =
             language === "English"
               ? specialist
-              : await wordTranslate(specialist.split("-")[0]);
+              : await wordTranslate(specialist.split(",")[0]);
 
-          return `${index + 1}. ${translatedSpecialist}\n`;
+            //console.log("translated",translatedSpecialist)  
+
+          return `${index + 1}. ${translatedSpecialist}`;
         })
       );
+      string2 = string2.join("\n");
+       
+      console.log(unique.length)
+     
       if (unique.length < 10) {
         specialistNumber = `*[1-${unique.length}]`;
       }
@@ -238,11 +247,13 @@ app.post("/ussd", async function (req, res) {
         specialistNumber = "*^(10|[1-9])$";
       }
       if (unique.length > 10 && unique.length < 20) {
-        specialistNumber = `*^(1[0-${unique.lenght}]|[1-9])$`;
+        specialistNumber = `*^(1[0-${unique.length}]|[1-9])$`;
       }
 
-      console.log(specialistNumber);
-      menu.con(string1.concat(" ", string2));
+      //console.log("Length", unique.length);
+      console.log(specialistNumber)
+      
+      menu.con(string1.concat( string2));
     },
     next: {
       [specialistNumber]: "registration.specialist-1",
@@ -388,17 +399,33 @@ app.post("/ussd", async function (req, res) {
         await menu.session.set("location", capitalize(location));
       }
       await menu.session.set("appointmentType", "physical");
+      const language = await menu.session.get("lang");
 
       const specialistType = await getDoctorType();
 
       let unique = [...new Set(specialistType)];
-      let string1 = `Select specialist you need:`;
+      let string1 = `Select specialist you need:\n`;
       let string2 = "";
-      unique.forEach((specialist, index) => {
-        string2 += `
-      ${index + 1}. ${specialist}
-     `;
-      });
+
+      string2 = await Promise.all(
+        
+        unique.map(async (specialist, index) => {
+          const translatedSpecialist =
+            language === "English"
+              ? specialist
+              : await wordTranslate(specialist.split(",")[0]);
+
+            //console.log("translated",translatedSpecialist)  
+
+          return `${index + 1}. ${translatedSpecialist}`;
+        })
+      );
+      string2 = string2.join("\n");
+    //   unique.forEach((specialist, index) => {
+    //     string2 += `
+    //   ${index + 1}. ${specialist}
+    //  `;
+    //   });
       specialistNumber = `*[1-${unique.length}]`;
 
       menu.con(string1.concat(" ", string2));
@@ -415,17 +442,24 @@ app.post("/ussd", async function (req, res) {
         await menu.session.set("location", capitalize(location));
       }
       await menu.session.set("appointmentType", "remote");
+      const language = await menu.session.get("lang");
 
       const specialistType = await getDoctorType();
 
       let unique = [...new Set(specialistType)];
-      let string1 = `Select specialist you need:`;
+      let string1 = `Select specialist you need:\n`;
       let string2 = "";
-      unique.forEach((specialist, index) => {
-        string2 += `
-      ${index + 1}. ${specialist}
-     `;
-      });
+      string2 = await Promise.all(
+        
+        unique.map(async (specialist, index) => {
+          const translatedSpecialist =
+            language === "English"
+              ? specialist
+              : await wordTranslate(specialist.split(",")[0]);
+          return `${index + 1}. ${translatedSpecialist}`;
+        })
+      );
+      string2 = string2.join("\n");
       specialistNumber = `*[1-${unique.length}]`;
 
       menu.con(string1.concat(" ", string2));
@@ -580,15 +614,15 @@ app.post("/ussd", async function (req, res) {
       // await insertUser(name, age, number, location);
 
       //console.log("Number", number);
-      const userId = await checkUserExist(number);
+      //const userId = await checkUserExist(number);
       //await insertUser(name, age, number, location);
       const sms_message = `Appointment scheduled with ${specialist} on ${date} at ${time}.`;
-      //await sendSms(phoneNumber, sms_message);
+      await sendSms(phoneNumber, sms_message);
       //console.log("User ID", userId);
       if (appointmentType === "physical") {
-        await recordAppointment(userId, doctorId, date, time);
+        //await recordAppointment(userId, doctorId, date, time);
       } else {
-        await recordTeleppointment(userId, doctorId, date, time);
+        //await recordTeleppointment(userId, doctorId, date, time);
       }
       //console.log(specialist, doctorId, name, date, time);
       menu.end(`Your appointment has been scheduled.
