@@ -61,11 +61,7 @@ menu.sessionConfig({
 app.get("/", async function (req, res) {
   // const token = await getOAuthToken();
   // console.log(token);
-  client.messages
-  .create({
-      to: '[HandsetNumber]'
-  })
-  .then(message => console.log(message.sid));
+ 
   res.send("Hello World");
 });
 
