@@ -386,8 +386,7 @@ app.post("/ussd", async function (req, res) {
               : `Tafadhali ingiza aina ya miadi:
                        1. Miadi ya ana kwa ana
                        2. Miadi ya mbali (Miadi ya video).`
-          } 
-     )`
+          }`
       );
     },
     next: {
