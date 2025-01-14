@@ -85,6 +85,16 @@ app.post("/ussd", async function (req, res) {
     "03:00 PM ",
   ];
 
+  const mudaNafasi = [
+    "09:00 Asubuhi",
+    "10:00 Asubuhi",
+    "11:00 Asubuhi",
+    "01:00 Mchana",
+    "02:00 Mchana",
+    "03:00 Mchana",
+  ];
+  
+
   // Define menu states
   menu.startState({
     run: () => {
@@ -407,7 +417,7 @@ app.post("/ussd", async function (req, res) {
       const specialistType = await getDoctorType();
 
       let unique = [...new Set(specialistType)];
-      let string1 = `Select specialist you need:\n`;
+      let string1 = `${language != "English"?"Chagua mtaalamu unayehitaji:\n": "Select specialist you need:\n"}`;
       let string2 = "";
 
       string2 = await Promise.all(
@@ -450,7 +460,7 @@ app.post("/ussd", async function (req, res) {
       const specialistType = await getDoctorType();
 
       let unique = [...new Set(specialistType)];
-      let string1 = `Select specialist you need:\n`;
+      let string1 = `${language != "English"?"Chagua mtaalamu unayehitaji:\n": "Select specialist you need:\n"}`;
       let string2 = "";
       string2 = await Promise.all(
         
@@ -475,6 +485,7 @@ app.post("/ussd", async function (req, res) {
   menu.state("registration.specialist", {
     run: async () => {
       let docIndex = menu.val;
+      const language = await menu.session.get("lang");
       // console.log("Index", docIndex);
       const location = await menu.session.get("location");
       const doctors = await getDoctors();
@@ -501,9 +512,14 @@ app.post("/ussd", async function (req, res) {
           });
         } else {
           return menu.con(
-            `There is currently no registered ${specialist} in ${location}:
-             0. Change Location,
-             100. Exit`
+              `${language === "English" 
+    ? `There is currently no registered ${specialist} in ${location}:
+        0. Change Location,
+        100. Exit` 
+    : `Kwa sasa hakuna ${specialist} aliyesajiliwa katika ${location}:
+        0. Badilisha Eneo,
+        100. Toka`}`
+
           );
         }
       }
@@ -519,7 +535,10 @@ app.post("/ussd", async function (req, res) {
     run: async () => {
       const appointmentType = await menu.session.get("appointmentType");
 
-      menu.con("Enter New Location/Town (e.g Nairobi):");
+      menu.con(language === "English" 
+        ? "Enter New Location/Town (e.g Nairobi):" 
+        : "Ingiza Eneo/Jiji Jipya (mfano: Nairobi):"
+      );
     },
     next: {
       "*[a-zA-Z]+": async () => {
@@ -536,6 +555,7 @@ app.post("/ussd", async function (req, res) {
   menu.state("appointment.doctor", {
     run: async () => {
       let docIndex = menu.val;
+      const language = await menu.session.get("lang");
       console.log("doc index", docIndex);
       const doc = await menu.session.get("Doctor");
       console.log("doc", doc);
@@ -547,8 +567,9 @@ app.post("/ussd", async function (req, res) {
         await menu.session.set("Doctor", doctor);
       }
 
-      menu.con(
-        "Please enter the Date for the Physical appointment (YYYY-MM-DD):"
+      menu.con( language === "English" ?
+        "Please enter the Date for the Physical appointment (YYYY-MM-DD):" :
+        "Tafadhali ingiza Tarehe ya miadi ya Ana kwa Ana (YYYY-MM-DD):"
       );
     },
     next: {
@@ -560,6 +581,7 @@ app.post("/ussd", async function (req, res) {
     run: async () => {
       let date = menu.val;
       const specialist = await menu.session.get("Doctor");
+      const language = await menu.session.get("lang");
       console.log(date);
       const doctorId = await getDoctorId(specialist);
       const appointments = await getGoogleAppointments(date, doctorId);
@@ -575,12 +597,22 @@ app.post("/ussd", async function (req, res) {
       // });
 
       await menu.session.set("slots", timeSlots);
-
-      const timeSlotsString = timeSlots
+      if(language === "English"){
+        const timeSlotsString = timeSlots
         .map((slot, index) => `${index + 1}. ${slot}`)
         .join("\n");
+      }else{
+        const timeSlotsString = mudaNafasi
+        .map((slot, index) => `${index + 1}. ${slot}`)
+        .join("\n");
+      }
+      
 
-      menu.con(`Please select an Appointment time slot:\n${timeSlotsString}`);
+      menu.con(language === "English" 
+        ? `Please select an Appointment time slot:\n${timeSlotsString}` 
+        : `Tafadhali chagua nafasi ya muda wa miadi:\n${timeSlotsString}`
+      
+      );
     },
     next: {
       "*\\d+": "appointment.time",
@@ -590,13 +622,14 @@ app.post("/ussd", async function (req, res) {
   menu.state("appointment.time", {
     run: async () => {
       let time = menu.val;
+      const language = await menu.session.get("lang");
       const slots = await menu.session.get("slots");
       // console.log("Timeslot", slots[time - 1]);
       await menu.session.set("time", slots[time - 1]);
       // const date = await menu.session.get("date");
       // console.log(date, time)
 
-      menu.con("Select 1 to confirm appointment:");
+      menu.con(language ==="English" ? "Select 1 to confirm appointment:" :"Chagua 1 kuthibitisha miadi:");
     },
     next: {
       1: "create.appointment",
@@ -619,7 +652,7 @@ app.post("/ussd", async function (req, res) {
       //console.log("Number", number);
       //const userId = await checkUserExist(number);
       //await insertUser(name, age, number, location);
-      const sms_message = `Appointment scheduled with ${specialist} on ${date} at ${time}.`;
+      const sms_message = language === "English" ?  `Appointment scheduled with ${specialist} on ${date} at ${time}.`: `Miadi imepangwa na ${specialist} tarehe ${date} saa ${time}.`;
       await sendSms(phoneNumber, sms_message);
       //console.log("User ID", userId);
       if (appointmentType === "physical") {
@@ -628,8 +661,10 @@ app.post("/ussd", async function (req, res) {
         //await recordTeleppointment(userId, doctorId, date, time);
       }
       //console.log(specialist, doctorId, name, date, time);
-      menu.end(`Your appointment has been scheduled.
-                      An appointment confirmation SMS has been sent to your phone.`);
+      menu.end(language === "English"? `Your appointment has been scheduled.
+                      An appointment confirmation SMS has been sent to your phone.`:
+                      `Miadi yako imepangwa.
+                      Ujumbe wa uthibitisho wa miadi umetumwa kwenye simu yako.`);
     },
   });
 
