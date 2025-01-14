@@ -540,6 +540,7 @@ Anwani: ${docDetails.address}`
           );
         }
       }
+      string1 = language === "English" ? "Select a Doctor:": "Chagua Daktari:"
       menu.con(string1.concat(" ", string2));
     },
     next: {
