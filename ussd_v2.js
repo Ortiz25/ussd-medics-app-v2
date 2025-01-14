@@ -302,7 +302,7 @@ app.post("/ussd", async function (req, res) {
              0. Change Location,
              100. Exit`:
              `
-Hakuna ${specialist} aliye sajiliwa kwa sasa katika ${location}:
+Hakuna ${await wordTranslate(specialist)} aliye sajiliwa kwa sasa katika ${location}:
 0. Badilisha Eneo,
 100. Ondoka`
           );
@@ -663,12 +663,13 @@ Anwani: ${docDetails.address}`
       const name = await menu.session.get("name");
       const number = await menu.session.get("number");
       const location = await menu.session.get("location");
+      const language = await menu.session.get("lang");
       // await insertUser(name, age, number, location);
 
       //console.log("Number", number);
       //const userId = await checkUserExist(number);
       //await insertUser(name, age, number, location);
-      const sms_message = language === "English" ?  `Appointment scheduled with ${specialist} on ${date} at ${time}.`: `Miadi imepangwa na ${specialist} tarehe ${date} saa ${time}.`;
+      const sms_message = language === "English" ?  `Appointment scheduled with ${specialist} on ${date} at ${time}.`: `Miadi imepangwa na ${await wordTranslate(specialist)} tarehe ${date} saa ${time}.`;
       await sendSms(phoneNumber, sms_message);
       //console.log("User ID", userId);
       if (appointmentType === "physical") {
@@ -691,6 +692,7 @@ Anwani: ${docDetails.address}`
       let currentDate = new Date();
       let hours = currentDate.getHours();
       let greetings;
+      const language = await menu.session.get("lang");
 
       function displayTime() {
         hours = hours < 10 ? "0" + hours : hours;
@@ -699,15 +701,15 @@ Anwani: ${docDetails.address}`
       let hour = displayTime();
 
       if (hour < 12) {
-        greetings = "Good Day!";
+        language === "Kiswahili"? greetings = "Habari za siku!":greetings = "Good Day!";
       } else if (hour >= 12 && hour < 17) {
-        greetings = "Good Afternoon!";
+        language === "Kiswahili"? greetings = "Habari za mchana!" :greetings = "Good Afternoon!";
       } else if (hour >= 17) {
-        greetings = "Good Evening!";
+        language === "Kiswahili"? greetings = "Habari za jioni!" :greetings = "Good Evening!";
       } else {
         greetings = "Bye!";
       }
-      menu.end(`Thanks for Your Time!, Have a ${greetings}`);
+      menu.end(language === "Kiswahili"? `Asante kwa Muda Wako! Pate ${greetings}`: `Thanks for Your Time!, Have a ${greetings}`);
     },
   });
 
