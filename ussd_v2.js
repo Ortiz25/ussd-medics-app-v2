@@ -476,7 +476,7 @@ Anwani: ${docDetails.address}`
       const specialistType = await getDoctorType();
 
       let unique = [...new Set(specialistType)];
-      let string1 = `${language != "English"?"Chagua mtaalamu unayehitaji:\n": "Select specialist you need:\n"}`;
+      let string1 = `${language === "English"? "Select specialist you need:\n" :"Chagua mtaalamu unayehitaji:\n" }`;
       let string2 = "";
       string2 = await Promise.all(
         
@@ -613,12 +613,13 @@ Anwani: ${docDetails.address}`
       // });
 
       await menu.session.set("slots", timeSlots);
+      let timeSlotsString = ""
       if(language === "English"){
-        const timeSlotsString = timeSlots
+         timeSlotsString = timeSlots
         .map((slot, index) => `${index + 1}. ${slot}`)
         .join("\n");
       }else{
-        const timeSlotsString = mudaNafasi
+         timeSlotsString = mudaNafasi
         .map((slot, index) => `${index + 1}. ${slot}`)
         .join("\n");
       }
