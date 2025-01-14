@@ -308,7 +308,7 @@ Hakuna ${specialist} aliye sajiliwa kwa sasa katika ${location}:
           );
         }
       }
-      menu.con(language === "English"?`Select a ${specialist} in ${location}:`.concat(" ", string2): `Chagua ${specialist} katika ${location}:`.concat(" ", string2));
+      menu.con(language === "English"?`Select a ${specialist} in ${location}:`.concat(" ", string2): `Chagua ${await wordTranslate(specialist)} katika ${location}:`.concat(" ", string2));
     },
     next: {
       [doctorNumber]: "appointment.doctor-1",
@@ -350,13 +350,13 @@ Hakuna ${specialist} aliye sajiliwa kwa sasa katika ${location}:
              0. Change Location,
              100. Exit`:
              `
-Hakuna ${specialist} aliye sajiliwa kwa sasa katika ${newLocation}:
+Hakuna ${await wordTranslate(specialist)} aliye sajiliwa kwa sasa katika ${newLocation}:
 0. Badilisha Eneo,
 100. Ondoka`
           );
         }
       }
-      menu.con(language === "English"?`Select a ${specialist} in ${newLocation}:`.concat(" ", string2): `Chagua ${specialist} katika ${newLocation}:`.concat(" ", string2));
+      menu.con(language === "English"?`Select a ${specialist} in ${newLocation}:`.concat(" ", string2): `Chagua ${await wordTranslate(specialist)} katika ${newLocation}:`.concat(" ", string2));
     },
   
     next: {
