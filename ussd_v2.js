@@ -434,7 +434,7 @@ Anwani: ${docDetails.address}`
       const specialistType = await getDoctorType();
 
       let unique = [...new Set(specialistType)];
-      let string1 = `${language != "English"?"Chagua mtaalamu unayehitaji:\n": "Select specialist you need:\n"}`;
+      let string1 = `${language === "English"? "Select specialist you need:\n" : "Chagua mtaalamu unayehitaji:\n"}`;
       let string2 = "";
 
       string2 = await Promise.all(
