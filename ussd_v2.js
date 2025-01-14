@@ -30,6 +30,7 @@ let specialist;
 let specialistNumber;
 let doctorNumber;
 let language;
+let timeSlotsString = ""
 
 menu.sessionConfig({
   start: (sessionId, callback) => {
@@ -613,7 +614,7 @@ Anwani: ${docDetails.address}`
       // });
 
       await menu.session.set("slots", timeSlots);
-      let timeSlotsString = ""
+ 
       if(language === "English"){
          timeSlotsString = timeSlots
         .map((slot, index) => `${index + 1}. ${slot}`)
