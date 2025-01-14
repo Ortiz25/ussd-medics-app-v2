@@ -272,6 +272,7 @@ app.post("/ussd", async function (req, res) {
       const doctors = await getDoctors();
       const specialistType = await getDoctorType();
       const location = await menu.session.get("location");
+      const language = await menu.session.get("lang");
       //console.log(doctors, specialistType);
       doctors.forEach((doctor, idx) => {
         doctorsArray.push({ index: `${idx + 1}`, name: doctor.name });
@@ -296,14 +297,18 @@ app.post("/ussd", async function (req, res) {
          `;
           });
         } else {
-          return menu.con(
+          return menu.con(language === "English"?
             `There is currently no registered ${specialist} in ${location}:
              0. Change Location,
-             100. Exit`
+             100. Exit`:
+             `
+Hakuna ${specialist} aliye sajiliwa kwa sasa katika ${location}:
+0. Badilisha Eneo,
+100. Ondoka`
           );
         }
       }
-      menu.con(`Select a ${specialist} in ${location}:`.concat(" ", string2));
+      menu.con(language === "English"?`Select a ${specialist} in ${location}:`.concat(" ", string2): `Chagua ${specialist} katika ${location}:`.concat(" ", string2));
     },
     next: {
       [doctorNumber]: "appointment.doctor-1",
@@ -312,8 +317,9 @@ app.post("/ussd", async function (req, res) {
     },
   });
   menu.state("new-location", {
-    run: () => {
-      menu.con("Enter New Location/Town (e.g Nairobi):");
+    run: async () => {
+      const language = await menu.session.get("lang");
+      menu.con(language === "English"? "Enter New Location/Town (e.g Nairobi):": "Ingiza Eneo/Mji Mpya (mfano: Nairobi):");
     },
     next: {
       "*[a-zA-Z]+": "reg-location",
@@ -323,6 +329,7 @@ app.post("/ussd", async function (req, res) {
     run: async () => {
       let newLocation = capitalize(menu.val.toLowerCase());
       const specialist = await menu.session.get("specialist-type");
+      const language = await menu.session.get("lang");
       // console.log("Selected specialist", specialist, newLocation);
 
       if (specialist) {
@@ -338,17 +345,20 @@ app.post("/ussd", async function (req, res) {
          `;
           });
         } else {
-          return menu.con(
+          return menu.con(language === "English"?
             `There is currently no registered ${specialist} in ${newLocation}:
              0. Change Location,
-             100. Exit`
+             100. Exit`:
+             `
+Hakuna ${specialist} aliye sajiliwa kwa sasa katika ${newLocation}:
+0. Badilisha Eneo,
+100. Ondoka`
           );
         }
       }
-      menu.con(
-        `Select a ${specialist} in ${newLocation}:`.concat(" ", string2)
-      );
+      menu.con(language === "English"?`Select a ${specialist} in ${newLocation}:`.concat(" ", string2): `Chagua ${specialist} katika ${newLocation}:`.concat(" ", string2));
     },
+  
     next: {
       [doctorNumber]: "appointment.doctor-1",
       0: "new-location",
@@ -358,6 +368,7 @@ app.post("/ussd", async function (req, res) {
 
   menu.state("appointment.doctor-1", {
     run: async () => {
+      const language = await menu.session.get("lang");
       let docIndex = menu.val;
       console.log("doc index", docIndex);
       const doc = await menu.session.get("specialist");
@@ -370,12 +381,17 @@ app.post("/ussd", async function (req, res) {
         await menu.session.set("Doctor", doctor);
         const docDetails = await getDoctorDetails(doctor);
         console.log("Details", docDetails);
-        menu.end(
+        menu.end( language === "English"?
           `${doctor}:
             Mobile: ${docDetails.contact}
             Town: ${docDetails.location}
             Email: ${docDetails.email}
-            Address: ${docDetails.address}`
+            Address: ${docDetails.address}`:
+            `${doctor}:
+Simu: ${docDetails.contact}
+Mji: ${docDetails.location}
+Barua pepe: ${docDetails.email}
+Anwani: ${docDetails.address}`
         );
       }
     },
