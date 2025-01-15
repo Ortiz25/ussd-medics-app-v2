@@ -456,12 +456,20 @@ Anwani: ${docDetails.address}`
     //   ${index + 1}. ${specialist}
     //  `;
     //   });
+    if (unique.length < 10) {
       specialistNumber = `*[1-${unique.length}]`;
+    }
+    if (unique.length === 10) {
+      specialistNumber = "*^(10|[1-9])$";
+    }
+    if (unique.length > 10 && unique.length < 20) {
+      specialistNumber = `*^(1[0-${unique.length}]|[1-9])$`;
+    }
 
       menu.con(string1.concat(" ", string2));
     },
     next: {
-      "*[1-10]": "registration.specialist",
+    [specialistNumber]: "registration.specialist",
     },
   });
 
@@ -490,7 +498,16 @@ Anwani: ${docDetails.address}`
         })
       );
       string2 = string2.join("\n");
-      specialistNumber = `*[1-${unique.length}]`;
+
+      if (unique.length < 10) {
+        specialistNumber = `*[1-${unique.length}]`;
+      }
+      if (unique.length === 10) {
+        specialistNumber = "*^(10|[1-9])$";
+      }
+      if (unique.length > 10 && unique.length < 20) {
+        specialistNumber = `*^(1[0-${unique.length}]|[1-9])$`;
+      }
 
       menu.con(string1.concat(" ", string2));
     },
@@ -503,7 +520,7 @@ Anwani: ${docDetails.address}`
     run: async () => {
       let docIndex = menu.val;
       const language = await menu.session.get("lang");
-      // console.log("Index", docIndex);
+       console.log("Index", docIndex);
       const location = await menu.session.get("location");
       const doctors = await getDoctors();
       const specialistType = await getDoctorType();
@@ -513,7 +530,7 @@ Anwani: ${docDetails.address}`
       });
       let unique = [...new Set(specialistType)];
       specialist = unique.at(docIndex - 1);
-
+           console.log(specialist)
       if (specialist) {
         const docNames = await getDoctorsNames(specialist, location);
         await menu.session.set("docNamesArray", docNames);
@@ -550,8 +567,9 @@ Anwani: ${docDetails.address}`
     },
   });
   menu.state("new-location1", {
+    
     run: async () => {
-      const appointmentType = await menu.session.get("appointmentType");
+      const language = await menu.session.get("lang");
 
       menu.con(language === "English" 
         ? "Enter New Location/Town (e.g Nairobi):" 
@@ -561,6 +579,7 @@ Anwani: ${docDetails.address}`
     next: {
       "*[a-zA-Z]+": async () => {
         const appointmentType = await menu.session.get("appointmentType");
+        console.log('app type',appointmentType )
         if (appointmentType === "remote") {
           return "remote";
         } else {
